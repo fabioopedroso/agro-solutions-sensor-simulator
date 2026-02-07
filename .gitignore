@@ -52,3 +52,4 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+/AgroSolutions.Sensor.Simulator/.vs/AgroSolutions.Sensor.Simulator.slnx
