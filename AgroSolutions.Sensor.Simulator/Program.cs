@@ -1,11 +1,33 @@
+using Application.DTOs;
+using Application.Services;
+using Infrastructure;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Configura as settings fortemente tipadas
+builder.Services.Configure<SensorSimulatorSettings>(builder.Configuration);
 
+// Registra o HttpClient para o SensorDataService
+builder.Services.AddHttpClient<SensorDataService>();
+
+// Registra o SensorDataService como Scoped
+builder.Services.AddScoped<SensorDataService>();
+
+// Adiciona a camada de infraestrutura (workers)
+builder.Services.AddInfrastructure();
+
+// Adiciona controllers e Swagger (opcional, para monitoramento)
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new()
+    {
+        Title = "AgroSolutions Sensor Simulator",
+        Version = "v1",
+        Description = "Simulador de sensores IoT para o sistema AgroSolutions"
+    });
+});
 
 var app = builder.Build();
 
@@ -18,8 +40,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
-
-app.MapControllers();
+// Endpoint de health check simples
+app.MapGet("/health", () => Results.Ok(new
+{
+    status = "healthy",
+    timestamp = DateTime.UtcNow,
+    service = "sensor-simulator"
+}))
+.WithName("HealthCheck")
+.WithTags("Health");
 
 app.Run();
