@@ -37,7 +37,10 @@ spec:
             name: sensor-simulator-config
         env:
         - name: Authentication__Token
-          value: "SEU_TOKEN_JWT_AQUI"  # Você precisará atualizar isso após criar um usuário
+          valueFrom:
+            secretKeyRef:
+              name: agrosolutions-secrets
+              key: jwt-token  # Você precisará adicionar um token JWT válido na secret
         resources:
           requests:
             memory: "128Mi"
