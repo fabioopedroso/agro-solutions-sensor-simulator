@@ -11,7 +11,4 @@ data:
   ASPNETCORE_URLS: "http://+:8080"
   SensorIngestion__BaseUrl: "http://sensor-ingestion:8080"
   SensorIngestion__Endpoint: "/api/sensor-data"
-  Simulation__IntervalSeconds: "45"
-  Simulation__FieldIds__0: "1"
-  Simulation__FieldIds__1: "2"
-  Simulation__FieldIds__2: "3"
+  Workers__IntervalSeconds: "45"

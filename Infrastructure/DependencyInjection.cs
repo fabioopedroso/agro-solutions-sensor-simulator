@@ -1,4 +1,5 @@
-using Infrastructure.Helpers;
+using Application.Services;
+using Infrastructure.Persistence;
 using Infrastructure.Workers;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,8 +9,10 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services)
     {
-        services.AddSingleton<GradualValueGenerator>();
+        // Data Access
+        services.AddScoped<IFieldDataAccess, FieldDataAccess>();
 
+        // Workers
         services.AddHostedService<SoilHumidityWorker>();
         services.AddHostedService<TemperatureWorker>();
         services.AddHostedService<RainfallWorker>();

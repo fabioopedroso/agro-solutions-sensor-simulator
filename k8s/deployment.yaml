@@ -36,11 +36,16 @@ spec:
         - configMapRef:
             name: sensor-simulator-config
         env:
+        - name: ConnectionStrings__ConnectionString
+          valueFrom:
+            secretKeyRef:
+              name: agrosolutions-secrets
+              key: supabase-connection-string
         - name: Authentication__Token
           valueFrom:
             secretKeyRef:
               name: agrosolutions-secrets
-              key: jwt-token  # Você precisará adicionar um token JWT válido na secret
+              key: jwt-token
         resources:
           requests:
             memory: "128Mi"

@@ -1,19 +1,34 @@
 using Application.DTOs;
 using Application.Services;
 using Infrastructure;
+using Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Configura as settings fortemente tipadas
 builder.Services.Configure<SensorSimulatorSettings>(builder.Configuration);
 
+// Configura DbContext para acesso aos talhões
+builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
+{
+    var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+    options.UseNpgsql(configuration.GetConnectionString("ConnectionString"));
+});
+
 // Registra o HttpClient para o SensorDataService
 builder.Services.AddHttpClient<SensorDataService>();
+
+// Registra o HttpClient para o OpenMeteoService
+builder.Services.AddHttpClient<IOpenMeteoService, OpenMeteoService>();
 
 // Registra o SensorDataService como Scoped
 builder.Services.AddScoped<SensorDataService>();
 
-// Adiciona a camada de infraestrutura (workers)
+// Registra serviços de aplicação
+builder.Services.AddScoped<IFieldService, FieldService>();
+
+// Adiciona a camada de infraestrutura (workers e repositórios)
 builder.Services.AddInfrastructure();
 
 // Adiciona controllers e Swagger (opcional, para monitoramento)
