@@ -1,6 +1,5 @@
-@AgroSolutions.Sensor.Simulator_HostAddress = http://localhost:5136
-
-GET {{AgroSolutions.Sensor.Simulator_HostAddress}}/weatherforecast/
+### Health Check do Sensor Simulator
+GET http://localhost:5000/health
 Accept: application/json
 
 ###

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sensor-simulator-config
+  namespace: agrosolutions
+  labels:
+    app: sensor-simulator
+    component: simulator
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+  ASPNETCORE_URLS: "http://+:8080"
+  SensorIngestion__BaseUrl: "http://sensor-ingestion:8080"
+  SensorIngestion__Endpoint: "/api/sensor-data"
+  Workers__IntervalSeconds: "45"
+  Observability__ServiceName: "AgroSolutions.Sensor.Simulator"
+  Observability__OtlpEndpoint: "http://otel-collector.agrosolutions.svc.cluster.local:4317"

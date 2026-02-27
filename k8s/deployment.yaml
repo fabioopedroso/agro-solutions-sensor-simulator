@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sensor-simulator
+  namespace: agrosolutions
+  labels:
+    app: sensor-simulator
+    component: simulator
+    version: v1
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: sensor-simulator
+  template:
+    metadata:
+      labels:
+        app: sensor-simulator
+        component: simulator
+        version: v1
+    spec:
+      containers:
+      - name: sensor-simulator
+        image: fabioopedroso/agro-sensor-simulator:v1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: sensor-simulator-config
+        env:
+        - name: ConnectionStrings__ConnectionString
+          valueFrom:
+            secretKeyRef:
+              name: agrosolutions-secrets
+              key: supabase-connection-string
+        - name: Authentication__Token
+          valueFrom:
+            secretKeyRef:
+              name: agrosolutions-secrets
+              key: jwt-token
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
