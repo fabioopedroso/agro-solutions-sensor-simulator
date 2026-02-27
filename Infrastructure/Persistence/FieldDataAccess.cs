@@ -1,5 +1,5 @@
 using Application.DTOs;
-using Application.Services;
+using Application.Services.Interfaces;
 using Infrastructure.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

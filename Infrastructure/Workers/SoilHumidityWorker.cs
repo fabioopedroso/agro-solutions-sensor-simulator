@@ -1,5 +1,5 @@
 using Application.DTOs;
-using Application.Services;
+using Application.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -36,7 +36,7 @@ public class SoilHumidityWorker : BackgroundService
                 using var scope = _serviceProvider.CreateScope();
                 var fieldService = scope.ServiceProvider.GetRequiredService<IFieldService>();
                 var openMeteoService = scope.ServiceProvider.GetRequiredService<IOpenMeteoService>();
-                var sensorService = scope.ServiceProvider.GetRequiredService<SensorDataService>();
+                var sensorService = scope.ServiceProvider.GetRequiredService<ISensorDataService>();
 
                 // Busca talhões ativos
                 var fields = await fieldService.GetActiveFieldsAsync(stoppingToken);

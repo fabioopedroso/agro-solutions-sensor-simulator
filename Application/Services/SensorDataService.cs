@@ -1,4 +1,5 @@
 using Application.DTOs;
+using Application.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
@@ -7,7 +8,7 @@ using System.Text.Json;
 
 namespace Application.Services;
 
-public class SensorDataService
+public class SensorDataService : ISensorDataService
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<SensorDataService> _logger;

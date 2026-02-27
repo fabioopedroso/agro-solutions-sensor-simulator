@@ -1,4 +1,5 @@
 using Application.DTOs;
+using Application.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace Application.Services;

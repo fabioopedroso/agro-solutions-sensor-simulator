@@ -1,42 +1,96 @@
-using Application.DTOs;
 using Application.Services;
+using Application.Services.Interfaces;
 using Infrastructure;
-using Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
+using Npgsql;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configura as settings fortemente tipadas
-builder.Services.Configure<SensorSimulatorSettings>(builder.Configuration);
+var serviceName = builder.Configuration["Observability:ServiceName"] ?? "AgroSolutions.Sensor.Simulator";
+var otlpEndpoint = builder.Configuration["Observability:OtlpEndpoint"];
 
-// Configura DbContext para acesso aos talhões
-builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
+var resourceBuilder = ResourceBuilder.CreateDefault()
+    .AddService(serviceName)
+    .AddTelemetrySdk()
+    .AddEnvironmentVariableDetector();
+
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddOpenTelemetry(logging =>
 {
-    var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-    options.UseNpgsql(configuration.GetConnectionString("ConnectionString"));
+    logging.IncludeFormattedMessage = true;
+    logging.IncludeScopes = true;
+    logging.SetResourceBuilder(resourceBuilder);
+
+    if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+    {
+        logging.AddOtlpExporter(options =>
+        {
+            options.Endpoint = new Uri(otlpEndpoint);
+        });
+    }
 });
 
-// Registra o HttpClient para o SensorDataService
-builder.Services.AddHttpClient<SensorDataService>();
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing =>
+    {
+        tracing.SetResourceBuilder(resourceBuilder)
+            .AddAspNetCoreInstrumentation(options =>
+            {
+                options.Filter = context => !context.Request.Path.Value!.Contains("/health");
+            })
+            .AddHttpClientInstrumentation()
+            .AddEntityFrameworkCoreInstrumentation(options =>
+            {
+                options.EnrichWithIDbCommand = (activity, command) =>
+                {
+                    activity.SetTag("db.statement", command.CommandText);
+                };
+            })
+            .AddNpgsql();
 
-// Registra o HttpClient para o OpenMeteoService
+        if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+        {
+            tracing.AddOtlpExporter(options =>
+            {
+                options.Endpoint = new Uri(otlpEndpoint);
+            });
+        }
+    })
+    .WithMetrics(metrics =>
+    {
+        metrics.SetResourceBuilder(resourceBuilder)
+            .AddRuntimeInstrumentation()
+            .AddProcessInstrumentation()
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddMeter("Npgsql");
+
+        if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+        {
+            metrics.AddOtlpExporter(options =>
+            {
+                options.Endpoint = new Uri(otlpEndpoint);
+            });
+        }
+    });
+
+builder.Services.AddInfrastructure(builder.Configuration);
+
+builder.Services.AddHttpClient<ISensorDataService, SensorDataService>();
 builder.Services.AddHttpClient<IOpenMeteoService, OpenMeteoService>();
 
-// Registra o SensorDataService como Scoped
-builder.Services.AddScoped<SensorDataService>();
+builder.Services.AddHealthChecks();
 
-// Registra serviços de aplicação
-builder.Services.AddScoped<IFieldService, FieldService>();
-
-// Adiciona a camada de infraestrutura (workers e repositórios)
-builder.Services.AddInfrastructure();
-
-// Adiciona controllers e Swagger (opcional, para monitoramento)
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new()
+    c.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "AgroSolutions Sensor Simulator",
         Version = "v1",
@@ -46,7 +100,6 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -54,15 +107,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-// Endpoint de health check simples
-app.MapGet("/health", () => Results.Ok(new
-{
-    status = "healthy",
-    timestamp = DateTime.UtcNow,
-    service = "sensor-simulator"
-}))
-.WithName("HealthCheck")
-.WithTags("Health");
+app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Run();
