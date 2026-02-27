@@ -27,8 +27,6 @@ public class SoilHumidityWorker : BackgroundService
     {
         _logger.LogInformation("SoilHumidityWorker iniciado");
 
-        await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
-
         while (!stoppingToken.IsCancellationRequested)
         {
             try

@@ -27,8 +27,6 @@ public class TemperatureWorker : BackgroundService
     {
         _logger.LogInformation("TemperatureWorker iniciado");
 
-        await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
-
         while (!stoppingToken.IsCancellationRequested)
         {
             try

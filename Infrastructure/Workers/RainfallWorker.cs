@@ -27,8 +27,6 @@ public class RainfallWorker : BackgroundService
     {
         _logger.LogInformation("RainfallWorker iniciado");
 
-        await Task.Delay(TimeSpan.FromSeconds(8), stoppingToken);
-
         while (!stoppingToken.IsCancellationRequested)
         {
             try

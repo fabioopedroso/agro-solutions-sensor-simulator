@@ -44,13 +44,6 @@ builder.Services.AddOpenTelemetry()
                 options.Filter = context => !context.Request.Path.Value!.Contains("/health");
             })
             .AddHttpClientInstrumentation()
-            .AddEntityFrameworkCoreInstrumentation(options =>
-            {
-                options.EnrichWithIDbCommand = (activity, command) =>
-                {
-                    activity.SetTag("db.statement", command.CommandText);
-                };
-            })
             .AddNpgsql();
 
         if (!string.IsNullOrWhiteSpace(otlpEndpoint))
@@ -88,23 +81,8 @@ builder.Services.AddHealthChecks();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "AgroSolutions Sensor Simulator",
-        Version = "v1",
-        Description = "Simulador de sensores IoT para o sistema AgroSolutions"
-    });
-});
 
 var app = builder.Build();
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
 
 app.UseHttpsRedirection();
 app.MapControllers();

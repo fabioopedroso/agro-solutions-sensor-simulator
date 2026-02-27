@@ -1,6 +1,7 @@
 using Application.DTOs;
 using Application.Services.Interfaces;
 using Microsoft.Extensions.Logging;
+using System.Globalization;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -40,7 +41,9 @@ public class OpenMeteoService : IOpenMeteoService
                 return null;
             }
 
-            var url = $"{BaseUrl}?latitude={latitude}&longitude={longitude}&hourly=temperature_2m,rain,soil_moisture_0_to_7cm&timezone=auto";
+            var lat = latitude.ToString("G", CultureInfo.InvariantCulture);
+            var lon = longitude.ToString("G", CultureInfo.InvariantCulture);
+            var url = $"{BaseUrl}?latitude={lat}&longitude={lon}&hourly=temperature_2m,rain,soil_moisture_0_to_7cm&timezone=auto";
 
             _logger.LogInformation("Buscando dados meteorológicos para coordenadas: Lat={Latitude}, Lon={Longitude}", latitude, longitude);
 

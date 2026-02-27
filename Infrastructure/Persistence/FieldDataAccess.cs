@@ -1,39 +1,40 @@
 using Application.DTOs;
 using Application.Services.Interfaces;
-using Infrastructure.Persistence.Entities;
-using Microsoft.EntityFrameworkCore;
+using Dapper;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace Infrastructure.Persistence;
 
 public class FieldDataAccess : IFieldDataAccess
 {
-    private readonly ApplicationDbContext _context;
+    private readonly string _connectionString;
     private readonly ILogger<FieldDataAccess> _logger;
-    private const int ActiveStatus = 1; // FieldStatus.Active = 1
+    private const int ActiveStatus = 1;
 
-    public FieldDataAccess(ApplicationDbContext context, ILogger<FieldDataAccess> logger)
+    public FieldDataAccess(string connectionString, ILogger<FieldDataAccess> logger)
     {
-        _context = context;
+        _connectionString = connectionString;
         _logger = logger;
     }
 
     public async Task<IEnumerable<FieldInfoDto>> GetActiveFieldsAsync(CancellationToken cancellationToken = default)
     {
+        const string sql = """
+            SELECT "Id", "Latitude", "Longitude"
+            FROM "Field"
+            WHERE "Status" = @Status
+            """;
+
         try
         {
-            var fields = await _context.Fields
-                .Where(f => f.Status == ActiveStatus)
-                .Select(f => new FieldInfoDto
-                {
-                    Id = f.Id,
-                    Latitude = f.Latitude,
-                    Longitude = f.Longitude
-                })
-                .ToListAsync(cancellationToken);
+            await using var connection = new NpgsqlConnection(_connectionString);
+            var fields = await connection.QueryAsync<FieldInfoDto>(
+                new CommandDefinition(sql, new { Status = ActiveStatus }, cancellationToken: cancellationToken));
 
-            _logger.LogDebug("Buscados {Count} talhões ativos do banco de dados", fields.Count);
-            return fields;
+            var result = fields.ToList();
+            _logger.LogDebug("Buscados {Count} talhões ativos do banco de dados", result.Count);
+            return result;
         }
         catch (Exception ex)
         {
